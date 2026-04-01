@@ -1,39 +1,33 @@
-import urllib.request
-import urllib.error
 import json
 import os
+from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 MODEL = "llama-3.3-70b-versatile"
 
 
 def _call_groq(messages: list[dict]) -> str:
-    payload = json.dumps({
-        "model": MODEL,
-        "messages": messages,
-        "temperature": 0.3,
-        "max_tokens": 2048,
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        GROQ_API_URL,
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-            "User-Agent": "CodeSage-Reviewer/1.0",
-        },
-        method="POST",
-    )
-
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data["choices"][0]["message"]["content"]
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8")
-        return f"API error {e.code}: {body}"
+        chat = ChatGroq(
+            temperature=0.3,
+            max_tokens=2048,
+            groq_api_key=GROQ_API_KEY,
+            model_name=MODEL,
+            max_retries=2,
+        )
+
+        lc_messages = []
+        for m in messages:
+            if m.get("role") == "system":
+                lc_messages.append(SystemMessage(content=m["content"]))
+            elif m.get("role") == "user":
+                lc_messages.append(HumanMessage(content=m["content"]))
+            elif m.get("role") == "assistant":
+                lc_messages.append(AIMessage(content=m["content"]))
+
+        response = chat.invoke(lc_messages)
+        return response.content
     except Exception as e:
         return f"Request failed: {str(e)}"
 
@@ -64,16 +58,25 @@ def get_code_review(code: str, ast_findings: dict) -> dict:
     ])
 
     try:
+        if raw.startswith("API error") or raw.startswith("Request failed"):
+            raise ValueError(raw)
+            
         start = raw.find("{")
         end = raw.rfind("}") + 1
-        return json.loads(raw[start:end])
-    except Exception:
+        parsed = json.loads(raw[start:end])
+        
+        if "error" in parsed:
+            raise ValueError(f"API returned error: {parsed['error']}")
+            
+        return parsed
+    except Exception as e:
+        error_msg = str(e) if str(e) else raw
         return {
             "bugs": ast_findings.get("bugs", []),
             "quality_issues": ast_findings.get("quality_issues", []),
             "complexity": ast_findings.get("complexity", {"time": "O(?)", "space": "O(?)"}),
-            "improvements": raw,
-            "summary": "Review complete.",
+            "improvements": error_msg,
+            "summary": "Review fallback due to API error.",
         }
 
 

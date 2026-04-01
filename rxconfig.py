@@ -11,4 +11,5 @@ if os.path.exists(".env"):
 
 config = rx.Config(
     app_name="Code_Review",
+    api_url="https://8dac46f0-b5fc-450d-b9bb-77769b3d0169.fly.dev",
 )
