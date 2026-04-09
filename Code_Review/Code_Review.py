@@ -1,33 +1,27 @@
 import reflex as rx
 
-from Code_Review.pages.home import home_page
-from Code_Review.pages.analyser import analyser_page
-from Code_Review.pages.history import history_page
-from Code_Review.state import AppState
+from Code_Review.pages.about import about
+from Code_Review.pages.assistant import assistant
+from Code_Review.pages.history import history
+from Code_Review.pages.index import index
+from Code_Review.pages.posts import posts
 
 app = rx.App(
-    stylesheets=[
-        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap",
-    ],
     style={
-        "*": {
-            "box_sizing": "border-box",
-            "margin": "0",
-            "padding": "0",
-        },
-        "body": {
-            "font_family": "'Inter', 'Segoe UI', sans-serif",
-            "background": "#0f0a1e",
-        },
-        "::scrollbar": {"width": "6px"},
-        "::scrollbar-track": {"background": "rgba(139, 92, 246, 0.05)"},
-        "::scrollbar-thumb": {
-            "background": "rgba(139, 92, 246, 0.3)",
-            "border_radius": "3px",
-        },
+        "background": (
+            "radial-gradient(circle at 8% 8%, rgba(46, 127, 228, 0.22) 0%, rgba(8, 16, 32, 0) 35%),"
+            "radial-gradient(circle at 88% 12%, rgba(244, 171, 72, 0.14) 0%, rgba(8, 16, 32, 0) 36%),"
+            "linear-gradient(160deg, #040811 0%, #061127 45%, #07162d 100%)"
+        ),
+        "min_height": "100vh",
+        "color": "#e6edf7",
+        "font_family": "'Sora', 'Manrope', 'Segoe UI', sans-serif",
+        "letter_spacing": "-0.01em",
     }
 )
 
-app.add_page(home_page, route="/")
-app.add_page(analyser_page, route="/analyser")
-app.add_page(history_page, route="/history")
+app.add_page(index, route="/", title="AI Code Reviewer")
+app.add_page(about, route="/about", title="About")
+app.add_page(assistant, route="/assistant", title="AI Assistant")
+app.add_page(posts, route="/posts", title="Review Code")
+app.add_page(history, route="/history", title="History")
